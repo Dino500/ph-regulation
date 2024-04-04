@@ -5,8 +5,17 @@
 
 This project shows how to build automatic ph regulation in pool using arduino.
 
+## Contents
 
-## Instalation
+- [ph-regulation](#ph-regulation)
+  - [About project](#about-project)
+  - [Contents](#contents)
+  - [Installation](#installation)
+    - [Esp installaion](#esp-installaion)
+    - [How to upload code](#how-to-upload-code)
+ 
+
+## Installation
 
 First install [Arduino IDE](https://www.arduino.cc/en/software)
 
@@ -38,7 +47,7 @@ Install these two boards
 </li>
 </ol>
 
-### How to upload code to esp-01 using arduino 
+### How to upload code
 
 ![uploading code](./Images/photo2.png)
 
