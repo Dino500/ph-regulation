@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@100&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background-color: #0f0f0f;
+        color: #ffff;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100vw;
+      }
+      tr {
+        border-bottom: 1px solid gray;
+      }
+      td {
+        padding: 5px;
+      }
+
+      .Naslov {
+        background-color: #2c2c2c;
+        padding: 17px;
+        font-family: "Montserrat", sans-serif;
+        font-weight: bolder;
+      }
+      .div {
+        padding-inline: 10px;
+        padding-bottom: 20px;
+        display: flex;
+        flex-direction: row;
+      }
+      .glavni {
+        background-color: #212121;
+        padding-bottom: 30px;
+        width: 100%;
+      }
+      .kartica {
+        font-weight: bolder;
+        font-size: large;
+      }
+    </style>
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="glavni">
+      <div class="Naslov">pH </div>
+      <div class="div">
+        <table>
+          <tr>
+            <td>Current pH value</td>
+            <td>
+              <div id="phvrijednost" class="kartica"></div>
+            </td>
+          </tr>
+          <tr>
+            <td>Fluid level</td>
+            <td>
+              <div id="spremnik" class="kartica"></div>
+            </td>
+          </tr>
+        </table>
+        <button onclick class="kartica" id="Button"></button>
+      </div>
+      <canvas id="chart" width="300" height="100"> </canvas>
+    </div>
+  </body>
+</html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+
+  import {
+    getDatabase,
+    ref,
+    onValue,
+    query,
+    limitToLast,
+    set,
+  } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "",
+    authDomain: "",
+    databaseURL:
+      "",
+    projectId: "",
+    storageBucket: "",
+    messagingSenderId: "",
+    appId: "",
+    measurementId: "",
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+
+  const db = getDatabase(app);
+  let phlog;
+  let vrijemelog;
+  let datet;
+  let daten;
+
+  let phdiv = document.getElementById("phvrijednost");
+  let spremnikdiv = document.getElementById("spremnik");
+  let buttoni = document.getElementById("Button");
+
+  let reflog = query(ref(db, "json"), limitToLast(100));
+  onValue(reflog, (data) => {
+    let log = data.val();
+
+    let keys = Object.keys(log);
+    phlog = [];
+    vrijemelog = [];
+    daten = [];
+    for (let i = 0; i < keys.length; i++) {
+      let k = keys[i];
+      phlog.push(parseFloat(log[k].ph));
+      daten.push(Date.parse(log[k].vrijeme));
+      vrijemelog.push(log[k].vrijeme.slice(11, 16));
+    }
+    console.log(vrijemelog);
+    console.log("date", daten);
+    destroyy();
+    render();
+  });
+
+  let refph = ref(db, "Ph_vrijednost");
+  onValue(refph, (data) => {
+    console.log(data.val());
+    phdiv.innerHTML = data.val() + "pH";
+    if (data.val() > 7.6) {
+      phdiv.style.color = "red";
+    } else {
+      phdiv.style.color = "white";
+    }
+  });
+
+  let reftank = ref(db, "stanje_spremnika");
+  onValue(reftank, (data) => {
+    console.log(data.val());
+    spremnikdiv.innerHTML = data.val();
+    if (data.val() != "Full") {
+      spremnikdiv.style.color = "red";
+    } else {
+      spremnikdiv.style.color = "white";
+    }
+  });
+
+  let refbutt = ref(db, "blink");
+  onValue(refbutt, (data) => {
+    console.log(data.val());
+    if (data.val()) {
+      buttoni.innerHTML = "ON";
+      buttoni.style.backgroundColor = "red";
+    } else {
+      buttoni.innerHTML = "OFF";
+      buttoni.style.backgroundColor = "lightgray";
+    }
+  });
+
+  function destroyy() {
+    chart.destroy();
+  }
+
+  let blinkval = false;
+
+  let blink = ref(db, "blink");
+  document.getElementById("Button").onclick = function () {
+    set(blink, blinkval);
+
+    blinkval = !blinkval;
+  };
+
+  let chart = new Chart("chart", {
+    type: "line",
+    data: {
+      labels: vrijemelog,
+      datasets: [
+        {
+          pointRadius: 1,
+          data: phlog,
+
+          lineTension: 0,
+          backgroundColor: "transparent",
+          borderColor: "#007bff",
+          borderWidth: 4,
+          pointBackgroundColor: "#007bff",
+        },
+      ],
+    },
+  });
+
+  function render() {
+    chart = new Chart("chart", {
+      type: "line",
+      data: {
+        labels: vrijemelog,
+        datasets: [
+          {
+            pointRadius: 1,
+            data: phlog,
+            lineTension: 0,
+            borderColor: "#007bff",
+            borderWidth: 4,
+            pointBackgroundColor: "#007bff",
+          },
+        ],
+      },
+      options: {
+        scales: {
+          yAxes: {
+            grid: {
+              color: "white",
+            },
+          },
+          xAxes: {
+            grid: {
+              color: "white",
+            },
+          },
+        },
+        legend: {
+          display: false,
+        },
+      },
+    });
+  }
+</script>
